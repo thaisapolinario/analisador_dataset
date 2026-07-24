@@ -1,4 +1,5 @@
 import os
+import re
 import glob
 import h5py
 import pandas as pd
@@ -15,7 +16,7 @@ EXTENSOES_SUPORTADAS = ['.hdf', '.h5', '.csv', '.xlsx', '.xls', '.parquet']
 
 REGRAS_CLASSIFICACAO = {
     'Powertrain & Motor (RPM, Torque, Potencia)': [
-        'rpm', 'enginespeed', 'engine_speed', 'torque', 'trq', 'engine_load', 
+        'rpm', 'enginespeed', 'engine_speed', 'torque', 'trq', 'engine_load',
         'coolant', 'engine_temp', 'oil_pressure', 'throttle', 'throttle_pos'
     ],
     'Transmissao & Troca de Marchas': [
@@ -28,29 +29,34 @@ REGRAS_CLASSIFICACAO = {
         'vehiclespeed', 'speed', 'v_x', 'accel_x', 'long_accel', 'wheel_speed'
     ],
     'Dinamica Lateral & Curvas (IMU / Giroscopio)': [
-        'accel_y', 'accel_z', 'lat_accel', 'gyro', 'gyroscope', 'pitch', 'roll', 
+        'accel_y', 'accel_z', 'lat_accel', 'gyro', 'gyroscope', 'pitch', 'roll',
         'yaw', 'yaw_rate', 'steering', 'steering_angle', 'slip_angle', 'g_force', 'imu'
     ],
     'Consumo de Combustivel & Gases': [
-        'fuel', 'fuelconsumption', 'fuel_rate', 'l/100km', 'km/l', 'diesel', 
-        'gasoline', 'co2', 'emissions'
+
+        'fuelconsumption', 'fuel_rate', 'fuelrate', 'fuel_level', 'fuel_used',
+        'l/100km', 'km/l', 'diesel', 'gasoline', 'co2', 'emissions'
     ],
     'Bateria & Sistema Eletrico (EV / Hibrido)': [
-        'soc', 'battery', 'battery_temp', 'current', 'voltage', 'power', 
+        'soc', 'battery', 'battery_temp', 'current', 'voltage', 'power',
         'energy', 'kwh', 'charging_status'
     ],
     'Navegacao, Rota & Elevacao (GPS)': [
-        'latitude', 'longitude', 'lat', 'lon', 'altitude', 'elevation', 'gps', 
-        'satellites', 'heading', 'direction', 'route', 'distance', 'track', 'tracks'
+        'latitude', 'longitude', 'lat', 'lon', 'altitude', 'elevation', 'gps',
+        'gnss', 'gnss_status', 'satellites', 'heading', 'direction', 'route',
+        'distance', 'track', 'tracks'
     ],
     'Gestao de Frota & Viagens (Trip Logs)': [
-        'fleet', 'fleet_id', 'trip', 'trip_id', 'status', 'start_time', 'end_time'
+
+        'fleet', 'fleet_id', 'trip', 'trip_id', 'trip_status', 'fleet_status',
+        'delivery_status', 'tour_status', 'start_time', 'end_time'
     ],
     'Perfil de Veiculo & Especificacoes Tecnicas': [
-        'driver', 'driver_id', 'vehicle_id', 'vehid', 'vin', 'model', 'brand', 
+        'driver', 'driver_id', 'vehicle_id', 'vehid', 'vin', 'model', 'brand',
         'year', 'weight', 'generalized_weight[lb]', 'drive_wheels', 'engine_configuration'
     ]
 }
+
 
 def limpar_relatorios_antigos():
     padroes_para_remover = [
@@ -59,13 +65,13 @@ def limpar_relatorios_antigos():
         "relatorio_grupos_datasets_*.xlsx"
     ]
     for padrao in padroes_para_remover:
-        arquivos_encontrados = glob.glob(padrao)
-        for caminho in arquivos_encontrados:
+        for caminho in glob.glob(padrao):
             try:
                 os.remove(caminho)
                 print(f"[LIMPEZA] Arquivo antigo removido: '{caminho}'")
             except Exception as e:
                 print(f"[AVISO] Nao foi possivel remover '{caminho}': {e}")
+
 
 def extrair_colunas_hdf5(caminho):
     colunas = []
@@ -73,21 +79,20 @@ def extrair_colunas_hdf5(caminho):
         with h5py.File(caminho, 'r') as hf:
             def callback(nome, obj):
                 if isinstance(obj, h5py.Dataset):
-                    nome_sinal = nome.split('/')[-1]
-                    colunas.append(nome_sinal)
+                    colunas.append(nome.split('/')[-1])
             hf.visititems(callback)
     except Exception:
         pass
     return colunas
 
+
 def extrair_colunas_excel(caminho):
-    colunas = []
     try:
         df_preview = pd.read_excel(caminho, nrows=2)
-        colunas = list(df_preview.columns)
+        return list(df_preview.columns)
     except Exception:
-        pass
-    return colunas
+        return []
+
 
 def extrair_colunas_generico(caminho):
     nome_arq = os.path.basename(caminho)
@@ -110,17 +115,30 @@ def extrair_colunas_generico(caminho):
         return []
     return []
 
-def classificar_lista_colunas(lista_colunas):
-    colunas_lower = [str(col).lower() for col in lista_colunas]
-    pontuacao = {tema: 0 for tema in REGRAS_CLASSIFICACAO}
 
-    for col in colunas_lower:
+
+def classificar_lista_colunas(lista_colunas):
+    pontuacao = {tema: 0 for tema in REGRAS_CLASSIFICACAO}
+    matches_por_tema = {tema: [] for tema in REGRAS_CLASSIFICACAO}
+
+    for col in lista_colunas:
+        col_lower = str(col).lower()
+        tokens = set(re.split(r'[^a-z0-9]+', col_lower)) | {col_lower}
+
         for tema, palavras_chave in REGRAS_CLASSIFICACAO.items():
-            if any(kw in col for kw in palavras_chave):
-                pontuacao[tema] += 1
+            for kw in palavras_chave:
+                kw_l = kw.lower()
+                is_token_match = kw_l in tokens
+                is_boundary_match = re.search(
+                    rf'(?<![a-z0-9]){re.escape(kw_l)}(?![a-z0-9])', col_lower
+                )
+                if is_token_match or is_boundary_match:
+                    pontuacao[tema] += 1
+                    matches_por_tema[tema].append(col)
+                    break  # uma keyword por coluna ja basta para pontuar o tema
 
     temas_encontrados = [tema for tema, qtd in pontuacao.items() if qtd > 0]
-    
+
     if not temas_encontrados:
         categoria_principal = "Nao identificado / Outros"
     elif len(temas_encontrados) == 1:
@@ -129,36 +147,19 @@ def classificar_lista_colunas(lista_colunas):
         temas_ordenados = sorted(temas_encontrados, key=lambda t: pontuacao[t], reverse=True)
         categoria_principal = f"Misto (Dominante: {temas_ordenados[0]})"
 
-    return categoria_principal, temas_encontrados
+    return categoria_principal, temas_encontrados, matches_por_tema
 
-def construir_resumo_detalhado(nome_fonte, tipo_fonte, qtd_arquivos, tamanho_mb, colunas, temas):
-    """Gera uma analise explicativa e contextual detalhada com base no conjunto de colunas e temas."""
+
+def construir_resumo_detalhado(nome_fonte, tipo_fonte, qtd_arquivos, tamanho_mb,
+                                colunas, temas, matches_por_tema):
     amostra_cols = ", ".join(colunas[:8]) if colunas else "Nenhuma coluna identificada"
     total_vars = len(colunas)
-    
+
     detalhes_tematicos = []
-    
     for t in temas:
-        if 'Powertrain' in t:
-            detalhes_tematicos.append("monitoramento de performance de motor e combustao (RPM, torque, carga)")
-        elif 'Transmissao' in t:
-            detalhes_tematicos.append("escalonamento e selecao de marchas")
-        elif 'Frenagem' in t:
-            detalhes_tematicos.append("dinamica de desaceleracao e acionamento de pedais")
-        elif 'Longitudinal' in t:
-            detalhes_tematicos.append("series temporais de velocidade do veiculo e aceleracao longitudinal")
-        elif 'Lateral' in t:
-            detalhes_tematicos.append("medicoes da IMU (aceleracoes laterais, giroscopio e angulo de estercamento/slip)")
-        elif 'Consumo' in t:
-            detalhes_tematicos.append("taxa de consumo de combustivel e emissao de efluentes")
-        elif 'Bateria' in t:
-            detalhes_tematicos.append("parametros eletricos de alta voltagem, estado de carga (SOC) e corrente")
-        elif 'Navegacao' in t:
-            detalhes_tematicos.append("posicionamento geografico via GPS, altitudes, rumo (heading) e trajetorias")
-        elif 'Gestao' in t:
-            detalhes_tematicos.append("historico de viagens (trips), status operacionais e IDs de acompanhamento")
-        elif 'Perfil' in t:
-            detalhes_tematicos.append("especificacoes estaticas de engenharia (peso, classe do veiculo, tipo de motor e tracao)")
+        cols_do_tema = matches_por_tema.get(t, [])
+        cols_str = ", ".join(cols_do_tema[:5])
+        detalhes_tematicos.append(f"{t} (colunas: {cols_str})")
 
     if detalhes_tematicos:
         foco_explicativo = "; ".join(detalhes_tematicos)
@@ -168,17 +169,18 @@ def construir_resumo_detalhado(nome_fonte, tipo_fonte, qtd_arquivos, tamanho_mb,
     if "Pasta" in tipo_fonte:
         resumo = (
             f"Conjunto estruturado em pasta reunindo {qtd_arquivos} arquivo(s) (totalizando {tamanho_mb:.2f} MB) "
-            f"e {total_vars} variavel(is) unicas. O perfil dos dados abrange: {foco_explicativo}. "
-            f"Exemplo de atributos mapeados: [{amostra_cols}]."
+            f"e {total_vars} variavel(is) unicas. Temas detectados, com as colunas que os originaram: {foco_explicativo}. "
+            f"Amostra de colunas (ordem de leitura): [{amostra_cols}]."
         )
     else:
         resumo = (
             f"Arquivo de dados individual ({tamanho_mb:.2f} MB) estruturado com {total_vars} colunas/variaveis. "
-            f"Contem registros focados em: {foco_explicativo}. "
-            f"Amostra de colunas presentes: [{amostra_cols}]."
+            f"Temas detectados, com as colunas que os originaram: {foco_explicativo}. "
+            f"Amostra de colunas (ordem de leitura): [{amostra_cols}]."
         )
 
     return resumo
+
 
 def salvar_excel_formatado(dados_fontes, caminho_saida):
     wb = openpyxl.Workbook()
@@ -186,13 +188,13 @@ def salvar_excel_formatado(dados_fontes, caminho_saida):
     ws.title = "Resumo dos Datasets"
 
     headers = [
-        "Dataset / Fonte", 
-        "Tipo de Fonte", 
-        "Qtd. Arquivos", 
-        "Tamanho (MB)", 
-        "Total Variaveis", 
-        "Categoria Dominante", 
-        "Subcategorias Detectadas", 
+        "Dataset / Fonte",
+        "Tipo de Fonte",
+        "Qtd. Arquivos",
+        "Tamanho (MB)",
+        "Total Variaveis",
+        "Categoria Dominante",
+        "Subcategorias Detectadas",
         "Resumo Detalhado e Perfil dos Dados"
     ]
     ws.append(headers)
@@ -258,17 +260,18 @@ def salvar_excel_formatado(dados_fontes, caminho_saida):
         print(f"[AVISO] O relatorio foi salvo em um novo arquivo: '{novo_caminho}'")
         return novo_caminho
 
+
 def mapear_fontes_dados(pasta_base):
     if not os.path.exists(pasta_base):
         return []
-    
+
     fontes = []
     for item in sorted(os.listdir(pasta_base)):
         if item.startswith('.') or item.startswith('~$') or item.startswith('relatorio_'):
             continue
-            
+
         caminho_completo = os.path.join(pasta_base, item)
-        
+
         if os.path.isdir(caminho_completo):
             arquivos = []
             for root, _, files in os.walk(caminho_completo):
@@ -277,11 +280,7 @@ def mapear_fontes_dados(pasta_base):
                     if ext in EXTENSOES_SUPORTADAS and not file.startswith('~$') and not file.startswith('relatorio_'):
                         arquivos.append(os.path.join(root, file))
             if arquivos:
-                fontes.append({
-                    'nome': item,
-                    'tipo': 'Pasta / Grupo',
-                    'arquivos': arquivos
-                })
+                fontes.append({'nome': item, 'tipo': 'Pasta / Grupo', 'arquivos': arquivos})
         else:
             ext = os.path.splitext(item)[1].lower()
             if ext in EXTENSOES_SUPORTADAS:
@@ -290,13 +289,14 @@ def mapear_fontes_dados(pasta_base):
                     'tipo': f'Arquivo ({ext.upper().replace(".", "")})',
                     'arquivos': [caminho_completo]
                 })
-                
+
     return fontes
+
 
 def analisar_pasta_dados(pasta_base):
     limpar_relatorios_antigos()
     fontes = mapear_fontes_dados(pasta_base)
-    
+
     if not fontes:
         print("=" * 75)
         print(f"ATENCAO: Nenhum dataset ou pasta encontrado dentro de '{pasta_base}'.")
@@ -305,9 +305,9 @@ def analisar_pasta_dados(pasta_base):
 
     dados_fontes = []
     conteudo_txt = []
-    
+
     conteudo_txt.append("=" * 85)
-    conteudo_txt.append("       RELATORIO DE ANÁLISE DETALHADA E CONTEXTUALIZADA DE DATASETS")
+    conteudo_txt.append("       RELATORIO DE ANALISE DETALHADA E CONTEXTUALIZADA DE DATASETS")
     conteudo_txt.append("=" * 85 + "\n")
 
     for fonte in fontes:
@@ -315,18 +315,21 @@ def analisar_pasta_dados(pasta_base):
         tipo_fonte = fonte['tipo']
         arquivos = fonte['arquivos']
 
-        colunas_fonte = set()
-        tamanho_total_mb = 0
-
+        colunas_fonte = []
         for arq in arquivos:
-            tamanho_mb = os.path.getsize(arq) / (1024 * 1024)
-            tamanho_total_mb += tamanho_mb
-            cols_arq = extrair_colunas_generico(arq)
-            colunas_fonte.update(cols_arq)
+            for c in extrair_colunas_generico(arq):
+                if c not in colunas_fonte:
+                    colunas_fonte.append(c)
 
-        tamanho_total_mb = round(tamanho_total_mb, 2)
-        col_fonte_lista = list(colunas_fonte)
-        cat_fonte, temas_fonte = classificar_lista_colunas(col_fonte_lista) if col_fonte_lista else ("Sem colunas / Erro", [])
+        tamanho_total_mb = round(
+            sum(os.path.getsize(arq) for arq in arquivos) / (1024 * 1024), 2
+        )
+
+        if colunas_fonte:
+            cat_fonte, temas_fonte, matches_por_tema = classificar_lista_colunas(colunas_fonte)
+        else:
+            cat_fonte, temas_fonte, matches_por_tema = "Sem colunas / Erro", [], {}
+
         temas_str = " | ".join(temas_fonte) if temas_fonte else "Nenhum"
 
         resumo_detalhado = construir_resumo_detalhado(
@@ -334,8 +337,9 @@ def analisar_pasta_dados(pasta_base):
             tipo_fonte=tipo_fonte,
             qtd_arquivos=len(arquivos),
             tamanho_mb=tamanho_total_mb,
-            colunas=col_fonte_lista,
-            temas=temas_fonte
+            colunas=colunas_fonte,
+            temas=temas_fonte,
+            matches_por_tema=matches_por_tema
         )
 
         dados_fontes.append({
@@ -343,7 +347,7 @@ def analisar_pasta_dados(pasta_base):
             'Tipo': tipo_fonte,
             'Qtd_Arquivos': len(arquivos),
             'Tamanho_Total_MB': tamanho_total_mb,
-            'Total_Variaveis': len(col_fonte_lista),
+            'Total_Variaveis': len(colunas_fonte),
             'Classificacao_Geral': cat_fonte,
             'Temas_Detectados': temas_str,
             'Resumo_Executivo': resumo_detalhado
@@ -355,7 +359,7 @@ def analisar_pasta_dados(pasta_base):
             f"- Tipo de Fonte           : {tipo_fonte}\n"
             f"- Qtd. de Arquivos        : {len(arquivos)}\n"
             f"- Tamanho Acumulado       : {tamanho_total_mb} MB\n"
-            f"- Total de Variaveis      : {len(col_fonte_lista)}\n"
+            f"- Total de Variaveis      : {len(colunas_fonte)}\n"
             f"- Categoria Dominante     : {cat_fonte}\n"
             f"- Subcategorias Mapeadas  : {temas_str}\n"
             f"- Resumo Detalhado        :\n"
@@ -374,6 +378,7 @@ def analisar_pasta_dados(pasta_base):
         print(f" Resumo em Texto : '{ARQUIVO_RELATORIO_TXT}'")
         print(f" Planilha Excel  : '{arquivo_salvo}'")
         print("=" * 75)
+
 
 if __name__ == "__main__":
     analisar_pasta_dados(PASTA_DADOS)
