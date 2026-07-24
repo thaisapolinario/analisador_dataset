@@ -1,0 +1,12 @@
+# Ignora arquivos grandes da pasta data, mas mantem a estrutura da pasta
+data/*
+!data/.gitkeep
+
+# Ignora os relatorios gerados localmente para nao poluir o repositorio
+relatorio_resumo_datasets.txt
+relatorio_grupos_datasets*.xlsx
+
+# Ignora o ambiente virtual e arquivos temporarios do Python / Excel
+.venv/
+__pycache__/
+~$*.xlsx
