@@ -10,3 +10,10 @@ relatorio_grupos_datasets*.xlsx
 .venv/
 __pycache__/
 ~$*.xlsx
+
+
+!relatorio_resumo_datasets.txt
+!relatorio_grupos_datasets.xlsx
+
+!data/
+!data/*

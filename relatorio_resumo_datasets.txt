@@ -1,0 +1,81 @@
+=====================================================================================
+       RELATORIO DE ANÁLISE DETALHADA E CONTEXTUALIZADA DE DATASETS
+=====================================================================================
+
+DATASET / FONTE           : Aegis
+-------------------------------------------------------------------------------------
+- Tipo de Fonte           : Pasta / Grupo
+- Qtd. de Arquivos        : 21
+- Tamanho Acumulado       : 879.39 MB
+- Total de Variaveis      : 155
+- Categoria Dominante     : Misto (Dominante: Powertrain & Motor (RPM, Torque, Potencia))
+- Subcategorias Mapeadas  : Powertrain & Motor (RPM, Torque, Potencia) | Transmissao & Troca de Marchas | Frenagem & Pedais | Dinamica Longitudinal (Velocidade & Aceleracao X) | Dinamica Lateral & Curvas (IMU / Giroscopio) | Consumo de Combustivel & Gases | Bateria & Sistema Eletrico (EV / Hibrido) | Navegacao, Rota & Elevacao (GPS) | Gestao de Frota & Viagens (Trip Logs)
+- Resumo Detalhado        :
+  Conjunto estruturado em pasta reunindo 21 arquivo(s) (totalizando 879.39 MB) e 155 variavel(is) unicas. O perfil dos dados abrange: monitoramento de performance de motor e combustao (RPM, torque, carga); escalonamento e selecao de marchas; dinamica de desaceleracao e acionamento de pedais; series temporais de velocidade do veiculo e aceleracao longitudinal; medicoes da IMU (aceleracoes laterais, giroscopio e angulo de estercamento/slip); taxa de consumo de combustivel e emissao de efluentes; parametros eletricos de alta voltagem, estado de carga (SOC) e corrente; posicionamento geografico via GPS, altitudes, rumo (heading) e trajetorias; historico de viagens (trips), status operacionais e IDs de acompanhamento. Exemplo de atributos mapeados: [SCS_Error, SCS_Coding, GBX_Precontrol_Torque, BoostPressure, ENG_Trq_ZWR, GBX_Coding_MSG, SCS_Tip_Restart, WIV_Sensorerror].
+-------------------------------------------------------------------------------------
+
+
+DATASET / FONTE           : VED_Static_Data_ICE&HEV.xlsx
+-------------------------------------------------------------------------------------
+- Tipo de Fonte           : Arquivo (XLSX)
+- Qtd. de Arquivos        : 1
+- Tamanho Acumulado       : 0.02 MB
+- Total de Variaveis      : 7
+- Categoria Dominante     : Misto (Dominante: Perfil de Veiculo & Especificacoes Tecnicas)
+- Subcategorias Mapeadas  : Transmissao & Troca de Marchas | Perfil de Veiculo & Especificacoes Tecnicas
+- Resumo Detalhado        :
+  Arquivo de dados individual (0.02 MB) estruturado com 7 colunas/variaveis. Contem registros focados em: escalonamento e selecao de marchas; especificacoes estaticas de engenharia (peso, classe do veiculo, tipo de motor e tracao). Amostra de colunas presentes: [Transmission, Drive Wheels, VehId, Engine Configuration & Displacement, Vehicle Type, Generalized_Weight, Vehicle Class].
+-------------------------------------------------------------------------------------
+
+
+DATASET / FONTE           : VED_Static_Data_PHEV&EV.xlsx
+-------------------------------------------------------------------------------------
+- Tipo de Fonte           : Arquivo (XLSX)
+- Qtd. de Arquivos        : 1
+- Tamanho Acumulado       : 0.01 MB
+- Total de Variaveis      : 7
+- Categoria Dominante     : Misto (Dominante: Perfil de Veiculo & Especificacoes Tecnicas)
+- Subcategorias Mapeadas  : Transmissao & Troca de Marchas | Perfil de Veiculo & Especificacoes Tecnicas
+- Resumo Detalhado        :
+  Arquivo de dados individual (0.01 MB) estruturado com 7 colunas/variaveis. Contem registros focados em: escalonamento e selecao de marchas; especificacoes estaticas de engenharia (peso, classe do veiculo, tipo de motor e tracao). Amostra de colunas presentes: [Transmission, EngineType, Drive Wheels, VehId, Engine Configuration & Displacement, Generalized_Weight, Vehicle Class].
+-------------------------------------------------------------------------------------
+
+
+DATASET / FONTE           : fleet.csv
+-------------------------------------------------------------------------------------
+- Tipo de Fonte           : Arquivo (CSV)
+- Qtd. de Arquivos        : 1
+- Tamanho Acumulado       : 0.0 MB
+- Total de Variaveis      : 5
+- Categoria Dominante     : Misto (Dominante: Perfil de Veiculo & Especificacoes Tecnicas)
+- Subcategorias Mapeadas  : Gestao de Frota & Viagens (Trip Logs) | Perfil de Veiculo & Especificacoes Tecnicas
+- Resumo Detalhado        :
+  Arquivo de dados individual (0.00 MB) estruturado com 5 colunas/variaveis. Contem registros focados em: historico de viagens (trips), status operacionais e IDs de acompanhamento; especificacoes estaticas de engenharia (peso, classe do veiculo, tipo de motor e tracao). Amostra de colunas presentes: [fleet_test_id, axle_class, vehicle_id, total_mass_with_trailer, gross_vehicle_weight].
+-------------------------------------------------------------------------------------
+
+
+DATASET / FONTE           : speed
+-------------------------------------------------------------------------------------
+- Tipo de Fonte           : Pasta / Grupo
+- Qtd. de Arquivos        : 1
+- Tamanho Acumulado       : 0.17 MB
+- Total de Variaveis      : 3
+- Categoria Dominante     : Dinamica Longitudinal (Velocidade & Aceleracao X)
+- Subcategorias Mapeadas  : Dinamica Longitudinal (Velocidade & Aceleracao X)
+- Resumo Detalhado        :
+  Conjunto estruturado em pasta reunindo 1 arquivo(s) (totalizando 0.17 MB) e 3 variavel(is) unicas. O perfil dos dados abrange: series temporais de velocidade do veiculo e aceleracao longitudinal. Exemplo de atributos mapeados: [speed, epoch, hdop].
+-------------------------------------------------------------------------------------
+
+
+DATASET / FONTE           : tracks.csv
+-------------------------------------------------------------------------------------
+- Tipo de Fonte           : Arquivo (CSV)
+- Qtd. de Arquivos        : 1
+- Tamanho Acumulado       : 15.62 MB
+- Total de Variaveis      : 19
+- Categoria Dominante     : Misto (Dominante: Navegacao, Rota & Elevacao (GPS))
+- Subcategorias Mapeadas  : Dinamica Longitudinal (Velocidade & Aceleracao X) | Consumo de Combustivel & Gases | Navegacao, Rota & Elevacao (GPS) | Gestao de Frota & Viagens (Trip Logs) | Perfil de Veiculo & Especificacoes Tecnicas
+- Resumo Detalhado        :
+  Arquivo de dados individual (15.62 MB) estruturado com 19 colunas/variaveis. Contem registros focados em: series temporais de velocidade do veiculo e aceleracao longitudinal; taxa de consumo de combustivel e emissao de efluentes; posicionamento geografico via GPS, altitudes, rumo (heading) e trajetorias; historico de viagens (trips), status operacionais e IDs de acompanhamento; especificacoes estaticas de engenharia (peso, classe do veiculo, tipo de motor e tracao). Amostra de colunas presentes: [n_signal_loss, distance, home_base, track_gap, max_speed, avg_hdop, service_area_fuel, tour_id].
+-------------------------------------------------------------------------------------
+
